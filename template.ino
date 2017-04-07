@@ -9,9 +9,10 @@ String firmware = "first commit";   // try to match this to a git commit - to tr
 String experiment = "calibration";  // used for filtering, and to differentiate concurrent experiments in same building
 String location = "Archlab"; // probably a building, used for filtering
 String label = "";  // something unqiue!
-int _delay = 5000; // how often you want device to publish
+int _delay = 7500; // how often you want device to publish
 
-#define num_data_points 10 // The MAX number of data points you'll be publishing
+#define num_data_points 8 // The MAX number of data points you'll be publishing
+#define num_phenom_types 4
 /**/
 
 /*  GENERAL STRUCTURE
@@ -36,12 +37,14 @@ String data[] = {
 }; // this hold a test array
 
 // "phemenon.unit,num_samples"
-String events[] = {
+String phenom_types[] = {
     "temp.c,3",
     "humidity,2",
     "co2.ppm,2",
     "voc.ppm,1"
-}
+};
+
+String string_holder = "";
 
 void setup() {
     // Hardware notes
@@ -58,14 +61,22 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Test");
-  /*Particle.publish("array length", String(num_data_points));*/
+  Serial.println("\nStart");
+  Serial.println(join(phenom_types, num_phenom_types));
+  Serial.println(join(data, num_data_points));
+  Serial.println("End");
   delay(_delay);
+
 }
 
-void get_num_chars(){
-  /* Loops through an array finds the number of characters */
-
+String join(String words[], int num_words){
+  /* Joins all elements in an array */
+  String all_together = "";
+  /*string_holder = "";*/
+  for (int i=0; i < num_words; i++){
+    all_together += (words[i] + " ");
+  }
+  return all_together;
 }
 
 void generate_string(){
