@@ -9,7 +9,7 @@ String firmware = "first commit";   // try to match this to a git commit - to tr
 String experiment = "CampusAsALab";  // used for filtering, and to differentiate concurrent experiments in same building
 String location = "ChaosLab"; // probably a building, used for filtering
 String label = "tester";  // something unqiue!
-int _delay = 4000; // how often you want device to publish
+int _delay = 1000; // how often you want device to publish
 
 #define num_data_points 8 // The MAX number of data points you'll be publishing
 #define num_phenom_types 4
