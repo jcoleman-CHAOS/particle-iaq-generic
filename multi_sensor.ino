@@ -1,52 +1,55 @@
 /*
-Project by:                   James Coleman
-Dated:                           04/06/2017
-Purpose:   Concisely explain data structure
+Project by:                               James Coleman
+Dated:                                      04/011/2017
+Purpose:    Encode and publish multiple sensor readings
 */
 
-/* USER INPUT */
-String firmware = "first commit";   // try to match this to a git commit - to track how a device is collecting data
-String experiment = "CampusAsALab";  // used for filtering, and to differentiate concurrent experiments in same building
-String location = "ChaosLab"; // probably a building, used for filtering
-String label = "tester";  // something unqiue!
-int _delay = 1000; // how often you want device to publish
+#define num_data_points 1 // The MAX number of data points you'll be publishing
+#define num_phenom_types 1
 
-#define num_data_points 8 // The MAX number of data points you'll be publishing
-#define num_phenom_types 4
+/* INCLUDE Statements */
+#include "application.h"  // Necessary for all I2C commands
 /**/
 
-/*  GENERAL STRUCTURE
+/* USER INPUT */
+String firmware = "template added";   // try to match this to a git commit - to track how a device is collecting data
+String experiment = "CISBAT";  // used for filtering, and to differentiate concurrent experiments in same building
+String location = "ChaosLab"; // probably a building, used for filtering
+String label = "alpa";  // something unqiue!
+int _delay = 5000; // how often you want device to publish
+/**/
 
-  Particle.pulish() uses...
-    - EVENTS as decoding key. (ex. "temp.c,3", "humidity,2",...)
-    - DATA to hold fields and tags. (ex. "Manifold_hot:20.2224", "Manifold_cold1:18.1245",...)
+/* ENCODING */
+int co2_index = 0;
 
-*/
-
-/*"label,temp.unit" <-- structure
-/*String data[num_data_points];*/
 String data[] = {
-    "Manifold_hot:20.2224",
-    "Manifold_cold1:18.1245",
-    "Manifold_cold2:17.1234",
-    "5':83",
-    "10':72",
-    "5':221",
-    "10':268",
-    "voc:50"
-}; // this hold a test array
+    "" // co2_index = 0
+}; // "label:value"
 
-// "phemenon.unit,num_samples"
 String phenom_types[] = {
-    "temp.c,3",
-    "humidity,2",
-    "co2.ppm,2",
-    "voc.ppm,1"
-};
+    "co2.ppm,1"
+}; // "phemenon.unit,num_samples"
 
 String string_holder = "";
 String event_string = "";
 String data_string = "";
+/**/
+
+/* CO2 SENSOR, I2C stuff */
+int i = 0;
+static const int address = 0x15;  // I2C Sensor address
+static const int MOD_READ[] = {
+0x04, /* Modbus function: Read Input Registers */
+0x13, /* Starting Address: 5003, MSB first */
+0x8B,
+0x00, /* # of registers to read: 1, MSB first */
+0x01,
+0x46, /* CRC, LSB then MSB */
+0x70
+};
+unsigned char buffer[6]; // this is to store the response
+int ppm_co2; // This is to store our value
+/**/
 
 void setup() {
     // Hardware notes
@@ -63,16 +66,44 @@ void setup() {
 }
 
 void loop() {
-  event_string = join(phenom_types, num_phenom_types);
-  data_string = join(data, num_data_points);
-
   Serial.println("\nStart");
   Particle.publish(event_string,data_string);
   Serial.println(event_string);
   Serial.println(data_string);
   Serial.println("End");
-  delay(_delay);
+  Serial.println();
 
+  /* CO2 Loop */
+    // Send request to CO2 sensor
+    Wire.beginTransmission(address);
+    for(i = 0; i < 6; i++){
+      Wire.write(MOD_READ[i]);
+      }
+    Wire.endTransmission();
+
+    Wire.requestFrom(address, 6);
+    if (Wire.available()){
+      for (int i=0; i<7; i++){
+        buffer[i] = Wire.read();
+      }
+    }
+
+    ppm_co2 = buffer[2] * 256 + buffer[3];
+
+    data[co2_index] = String(ppm_co2);
+
+    Serial.print("PPM co2: ");
+    Serial.println(ppm_co2);
+  /**/
+
+  /* ENCODE + PUBLISH */
+  event_string = join(phenom_types, num_phenom_types);
+  data_string = join(data, num_data_points);
+
+  Particle.publish(event_string,data_string); // Publish
+  /**/
+
+  delay(_delay);
 }
 
 String join(String words[], int num_words){
